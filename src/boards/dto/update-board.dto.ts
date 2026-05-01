@@ -1,16 +1,14 @@
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateBoardDto {
-    @IsOptional()
-    @IsString()
-    title?: string;
+  @ApiPropertyOptional({ example: '수정된 제목' })
+  @IsOptional()
+  @IsString()
+  title?: string;
 
-    @IsOptional()
-    @IsString()
-    content?: string;
-
-    @IsOptional()
-    @IsInt()
-    @Min(1)
-    userId?: number;
+  @ApiPropertyOptional({ example: '수정된 내용입니다.' })
+  @IsOptional()
+  @IsString()
+  content?: string;
 }
