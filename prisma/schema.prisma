@@ -1,3 +1,9 @@
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  INFOTEAM_ACCOUNT
+}
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,21 +13,82 @@ datasource db {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  name     String
-
-  posts    Post[]
-}
-
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author   User @relation(fields: [authorId], references: [id])
-  authorId Int
+  authAccounts  AuthAccount[]
+  posts         Post[]
+  subscriptions CategorySubscription[]
+}
+
+model AuthAccount {
+  id             Int          @id @default(autoincrement())
+  provider       AuthProvider
+  providerUserId String
+  userId         String       @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model Post {
+  id         Int      @id @default(autoincrement())
+  title      String
+  content    String
+  authorId   String   @db.Uuid
+  categoryId Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([authorId])
+  @@index([categoryId])
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  posts         Post[]
+  subscriptions CategorySubscription[]
+}
+
+model CategorySubscription {
+  userId     String   @db.Uuid
+  categoryId Int
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, categoryId])
+  @@index([categoryId])
+}
+
+
+model Board {
+  id         Int      @id @default(autoincrement())
+  title      String
+  content    String
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+}
+
+model Category {
+  id            Int                    @id @default(autoincrement())
+  name          String                 @unique
+  deletedAt     DateTime?
+
+  boards        Board[]
+  subscriptions CategorySubscription[]
 }

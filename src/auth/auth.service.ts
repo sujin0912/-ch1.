@@ -1,64 +1,95 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  ConflictException,
-} from '@nestjs/common';
+import {Injectable, UnauthorizedException,} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../prisma/prisma.service';
+import { AuthRepository } from './auth.repository';
+import { LoginResponseDto } from './dto/login-response.dto';
+import { ConfigService } from '@nestjs/config';
+import { JwtPayload } from './type/jwt-payload.type';
+import {IdpUserInfo} from './type/idp-user-info.type';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly authRepository : AuthRepository,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
-  async signup(email: string, password: string, name: string) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+  async findIdpUserBySub(
+    sub:string,
+  ) {
+    const user =
+    await this.authRepository.findIdpUserBySub(sub);
 
-    if (existingUser) {
-      throw new ConflictException('이미 사용 중인 이메일입니다.');
+    if(!user){
+      throw new UnauthorizedException(
+        'IDP 계정과 연결된 사용자가 없습니다.',
+      );
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-      },
-    });
-
-    const { password: _, ...result } = user;
-    return result;
+    return user;
   }
 
-  async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+  async findOrCreateIdpUser(userInfo: IdpUserInfo) {
+    return await this.authRepository.findOrCreateUserByIdpUserInfo(userInfo);
+  }
 
-    if (!user) {
-      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
-    }
+  async refresh(
+  refreshToken: string,
+): Promise<LoginResponseDto> {
+  try {
+    const payload =
+      await this.jwtService.verifyAsync<JwtPayload>(
+        refreshToken,
+        {
+          secret:
+            this.configService.getOrThrow<string>(
+              'JWT_REFRESH_SECRET',
+            ),
+        },
+      );
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const user =
+      await this.authRepository.findUserByIdOrThrow(
+        payload.sub,
+      );
 
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
-    }
-
-    const payload = {
+    const newPayload: JwtPayload = {
       sub: user.id,
       email: user.email,
     };
 
+    return await this.issueToken(newPayload);
+  } catch (error) {
+    if (error instanceof UnauthorizedException) {
+      throw error;
+    }
+
+    throw new UnauthorizedException(
+      '유효하지 않거나 만료된 Refresh Token입니다.',
+    );
+  }
+}
+
+  private async issueToken(payload: JwtPayload): Promise<LoginResponseDto> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret:
+          this.configService.getOrThrow<string>(
+            'JWT_SECRET',
+          ),
+        expiresIn: '15m',
+      }),
+
+      this.jwtService.signAsync(payload, {
+        secret:
+          this.configService.getOrThrow<string>(
+            'JWT_REFRESH_SECRET',
+          ),
+        expiresIn: '7d',
+      }),
+    ]);
     return {
-      accessToken: this.jwtService.sign(payload),
-    };
+      accessToken,
+      refreshToken,
+    }
   }
 }

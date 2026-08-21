@@ -1,58 +1,90 @@
-import {Body,Controller, Delete, Get, Param, Patch, Post, Req, UseGuards} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {Body,Controller,Delete,Get,Param,Patch,Post,Req,Query,ParseIntPipe,UseGuards,} from '@nestjs/common';
+import {ApiOperation,ApiTags,} from '@nestjs/swagger';
 import { BoardsService } from './boards.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { BoardResponseDto } from './dto/board-response.dto';
+import { BoardListQueryDto } from './dto/board-list-query.dto';
+import { BoardListResponseDto } from './dto/board-list-response.dto';
+import { IdpAuthGuard } from '../auth/guard/idp-auth/idp-auth.guard';
+import type {IdpAuthenticatedRequest,} from '../auth/type/idp-authenticated-request.type';
 
 @ApiTags('boards')
 @Controller('boards')
 export class BoardsController {
-  constructor(private readonly boardsService: BoardsService) {}
+  constructor(
+    private readonly boardsService: BoardsService,
+  ) {}
 
   @ApiOperation({ summary: '게시글 생성' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(IdpAuthGuard)
   @Post()
-  create(@Body() createBoardDto: CreateBoardDto, @Req() req) {
-    return this.boardsService.create(createBoardDto, req.user.id);
+  async create(
+    @Body() createBoardDto: CreateBoardDto,
+    @Req() req: IdpAuthenticatedRequest,
+  ): Promise<BoardResponseDto> {
+    return await this.boardsService.create(
+      createBoardDto,
+      req.user.id,
+    );
   }
 
   @ApiOperation({ summary: '전체 게시글 조회' })
   @Get()
-  findAll() {
-    return this.boardsService.findAll();
+  async findAll(
+    @Query() query: BoardListQueryDto,
+  ): Promise<BoardListResponseDto> {
+    return await this.boardsService.findAll(
+      query.offset,
+      query.limit,
+    );
   }
 
-  @ApiOperation({ summary: '특정 유저가 작성한 게시글 조회' })
+  @ApiOperation({
+    summary: '특정 유저가 작성한 게시글 조회',
+  })
   @Get('user/:userId')
-  findByUser(@Param('userId') userId: string) {
-    return this.boardsService.findPostsByUserId(+userId);
+  async findByUserId(
+    @Param('userId') userId: string,
+  ): Promise<BoardResponseDto[]> {
+    return await this.boardsService.findPostsByUserId(
+      userId,
+    );
   }
 
   @ApiOperation({ summary: '게시글 단일 조회' })
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.boardsService.findOne(+id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<BoardResponseDto> {
+    return await this.boardsService.findOne(id);
   }
 
   @ApiOperation({ summary: '게시글 수정' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(IdpAuthGuard)
   @Patch(':id')
-  update(
-    @Param('id') id: string,
+  async update(
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateBoardDto: UpdateBoardDto,
-    @Req() req,
-  ) {
-    return this.boardsService.update(+id, updateBoardDto, req.user.id);
+    @Req() req: IdpAuthenticatedRequest,
+  ): Promise<BoardResponseDto> {
+    return await this.boardsService.update(
+      id,
+      updateBoardDto,
+      req.user.id,
+    );
   }
 
   @ApiOperation({ summary: '게시글 삭제' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(IdpAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req) {
-    return this.boardsService.remove(+id, req.user.id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: IdpAuthenticatedRequest,
+  ): Promise<BoardResponseDto> {
+    return await this.boardsService.remove(
+      id,
+      req.user.id,
+    );
   }
 }
