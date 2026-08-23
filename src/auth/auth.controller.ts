@@ -13,7 +13,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { IdpService} from './idp/idp.service';
 import type { IdpCallbackQueryType, } from './type/idp-callback-query.type';
 import { error } from 'console';
-import { IdpAuthGuard} from './guard/idp-auth/idp-auth.guard';
+import { IdpAuthGuard } from './guard/idp-auth/idp-auth.guard';
 import type {IdpAuthenticatedRequest,} from './type/idp-authenticated-request.type';
 
 type GoogleAuthenticatedRequest = Request & {
@@ -123,32 +123,23 @@ async idpCallback(
   }
 
   try {
-    const token =
+    const idptoken =
       await this.idpService.exchangeCodeForToken(
         query.code,
         codeVerifier,
       );
     
     const userInfo = await this.idpService.getUserInfo(
-      token. access_token,
+      idptoken. access_token,
     );
+
+    const tokens = await this.authService.loginWithIdp(userInfo);
+
+    response.status(200).json(tokens);
 
     const user = await this. authService.findOrCreateIdpUser(
       userInfo,
     );
-
-   response.cookie(
-  'idp_access_token',
-  token.access_token,
-  {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: false,
-    path: '/',
-    maxAge:
-      (token.expires_in ?? 10800) * 1000,
-  },
-  );
 
   response.clearCookie(
       'idp_state',

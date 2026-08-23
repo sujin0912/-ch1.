@@ -17,7 +17,7 @@ export class BoardsController {
   ) {}
 
   @ApiOperation({ summary: '게시글 생성' })
-  @UseGuards(IdpAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post()
   async create(
     @Body() createBoardDto: CreateBoardDto,
@@ -61,7 +61,7 @@ export class BoardsController {
   }
 
   @ApiOperation({ summary: '게시글 수정' })
-  @UseGuards(IdpAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -76,7 +76,7 @@ export class BoardsController {
   }
 
   @ApiOperation({ summary: '게시글 삭제' })
-  @UseGuards(IdpAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(
     @Param('id', ParseIntPipe) id: number,

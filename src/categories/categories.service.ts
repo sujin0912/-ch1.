@@ -1,6 +1,7 @@
 import {BadRequestException, ConflictException, Injectable, NotFoundException,} from '@nestjs/common';
 import { CategoriesRepository } from './categories.repository';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { Category } from '@prisma/client';
 
 @Injectable()
 export class CategoriesService {
@@ -9,7 +10,7 @@ export class CategoriesService {
       CategoriesRepository,
   ) {}
 
-  async findActiveByIdOrThrow( id: number) {
+  async findByIdOrThrow( id: number): Promise<Category> {
     const category = await this.categoriesRepository.findActiveById(id);
 
     if(!category) {
@@ -20,14 +21,14 @@ export class CategoriesService {
     return category;    
   }
 
-  async findAll() {
+  async findAll(): Promise<Category[]> {
     return await this.categoriesRepository
       .findAllActive();
   }
 
   async create(
     createCategoryDto: CreateCategoryDto,
-  ) {
+  ): Promise<Category> {
     const name =
       createCategoryDto.name.trim();
 
@@ -61,7 +62,7 @@ export class CategoriesService {
 
   async remove(
     id: number,
-  ) {
+  ): Promise<Category> {
     const category =
       await this.categoriesRepository
         .findActiveById(id);

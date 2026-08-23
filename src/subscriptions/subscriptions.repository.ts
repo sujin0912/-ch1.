@@ -1,5 +1,16 @@
 import { Injectable} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import type { Category, CategorySubscription,} from '@prisma/client';
 import { PrismaService} from '../prisma/prisma.service';
+
+const subscriptionWithCategory = {
+    include: {
+        category: true,
+    },
+} satisfies Prisma.CategorySubscriptionDefaultArgs;
+
+export type SubscriptionWithCategory =
+  Prisma.CategorySubscriptionGetPayload<typeof subscriptionWithCategory>;
 
 @Injectable()
 export class SubscriptionsRepository{
@@ -7,21 +18,9 @@ export class SubscriptionsRepository{
         private readonly prisma: PrismaService,
     ) {}
 
-
-    async findActiveById(
-        id: number,
-    ) {
-        return await this.prisma.category.findFirst({
-            where: {
-                id,
-                deletedAt: null,
-            },
-        });
-    }
-
-    async findActiveCategory(
+    async findCategory(
         categoryId: number,
-    ) {
+    ): Promise<Category|null> {
         return await this.prisma.category.findFirst({
             where: {
                 id: categoryId,
@@ -33,7 +32,7 @@ export class SubscriptionsRepository{
     async findSubscription(
         userId: string,
         categoryId: number,
-    ) {
+    ): Promise<CategorySubscription | null> {
         return await this.prisma.categorySubscription.findUnique({
             where: {
                 userId_categoryId: {
@@ -47,43 +46,41 @@ export class SubscriptionsRepository{
     async create(
         userId: string,
         categoryId: number,
-    ) {
+    ): Promise<SubscriptionWithCategory> {
         return await this.prisma.categorySubscription.create({
             data: {
                 userId,
                 categoryId,
             },
-            include: {
-                category: true,
-            },
+            ...subscriptionWithCategory,
         });
     }
 
     async remove(
         userId: string,
         categoryId: number,
-    ) {
+    ): Promise<SubscriptionWithCategory> {
         return await this.prisma.categorySubscription.delete({
             where: {
                 userId_categoryId: {
                     userId, categoryId,
                 },
             },
+            ...subscriptionWithCategory,
         });
     }
 
     async findAllByUser(
         userId: string,
-    ) {
+    ): Promise<SubscriptionWithCategory[]> {
         return await this.prisma.categorySubscription.findMany({
             where: {
                 userId, category: {
                     deletedAt: null,
                 },
             },
-            include: {
-                category: true,
-            },
+           ...subscriptionWithCategory,
+
             orderBy: {
                 createdAt: 'desc',
             },

@@ -1,12 +1,12 @@
 import {Controller, Delete, Get, Param, ParseIntPipe, Post, Req, UseGuards,} from '@nestjs/common';
 import {ApiTags} from '@nestjs/swagger';
-import { IdpAuthGuard } from '../auth/guard/idp-auth/idp-auth.guard';
 import type {IdpAuthenticatedRequest,} from '../auth/type/idp-authenticated-request.type';
 import {SubscriptionsService} from './subscriptions.service';
+import { SubscriptionResponseDto} from './dto/subscription-response.dto';
 
 @ApiTags('category subscriptions')
 @Controller('categories')
-@UseGuards(IdpAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class SubscriptionsController {
     constructor(
         private readonly subscriptionsService: SubscriptionsService,
@@ -16,7 +16,7 @@ export class SubscriptionsController {
     findMine(
         @Req()
         request: IdpAuthenticatedRequest,
-    ) {
+    ): Promise<SubscriptionResponseDto[]> {
         return this.subscriptionsService.findMine(
             request.user.id,
         );
@@ -31,7 +31,7 @@ export class SubscriptionsController {
         categoryId: number,
         @Req()
         request: IdpAuthenticatedRequest,
-    ) {
+    ): Promise<SubscriptionResponseDto> {
         return this.subscriptionsService.subscribe(
             request.user.id,
             categoryId,
@@ -47,7 +47,7 @@ export class SubscriptionsController {
         categoryId: number,
         @Req()
         request: IdpAuthenticatedRequest,
-        ) {
+        ): Promise<SubscriptionResponseDto> {
         return this.subscriptionsService.unsubscribe(
             request.user.id,
             categoryId,

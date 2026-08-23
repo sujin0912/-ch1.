@@ -32,6 +32,17 @@ export class AuthService {
     return await this.authRepository.findOrCreateUserByIdpUserInfo(userInfo);
   }
 
+  async loginWithIdp(userInfo: IdpUserInfo,): 
+  Promise<LoginResponseDto> {
+    const user = await this.authRepository.upsertIdpUser(userInfo);
+
+    return this.issueToken({
+      sub: user.id,
+      email: user.email,
+    });
+    
+  }
+
   async refresh(
   refreshToken: string,
 ): Promise<LoginResponseDto> {

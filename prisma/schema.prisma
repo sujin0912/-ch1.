@@ -73,22 +73,3 @@ model CategorySubscription {
   @@id([userId, categoryId])
   @@index([categoryId])
 }
-
-
-model Board {
-  id         Int      @id @default(autoincrement())
-  title      String
-  content    String
-
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
-}
-
-model Category {
-  id            Int                    @id @default(autoincrement())
-  name          String                 @unique
-  deletedAt     DateTime?
-
-  boards        Board[]
-  subscriptions CategorySubscription[]
-}

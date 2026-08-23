@@ -19,3 +19,11 @@ export class BoardResponseDto{
     @ApiProperty({example: '2024-06-05T12:00:00Z',})
     updatedAt: Date;
 }
+
+export class BoardCategoryReponseDto {
+    @ApiProperty({example: 1 })
+    id: number;
+
+    @ApiProperty({example: '카테고리1'})
+    name: string;
+}

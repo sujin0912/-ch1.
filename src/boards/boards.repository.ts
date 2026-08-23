@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 
-const postwithAuthor = {
+const postwithRelations = {
   include: {
     author: {
       select: {
@@ -13,11 +13,16 @@ const postwithAuthor = {
         name: true,
       },
     },
-    category: true,
+    category: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
   },
 } satisfies Prisma.PostDefaultArgs;
 
-export type PostWithAuthor = Prisma.PostGetPayload<typeof postwithAuthor>;
+export type PostWithAuthor = Prisma.PostGetPayload<typeof postwithRelations>;
 export type BoardListResult = {
   items: PostWithAuthor[];
   totalCount: number;
@@ -32,10 +37,21 @@ export class BoardsRepository {
       data: {
         title: createBoardDto.title,
         content: createBoardDto.content,
-        categoryId: createBoardDto.categoryId,
-        authorId,
+
+        author: {
+          connect: {
+            id: authorId,
+          },
+        },
+
+        category: {
+          connect: {
+            id: createBoardDto.categoryId,
+            deletedAt: null,
+          },
+        },
       },
-    ...postwithAuthor,
+    ...postwithRelations,
     });
   }
 
@@ -70,11 +86,29 @@ export class BoardsRepository {
     });
   }
 
-  async update(id: number, updateBoardDto: UpdateBoardDto): Promise<PostWithAuthor> {
+  async update(id: number, updateBoardDto: UpdateBoardDto): Promise<PostWithRelations> {
+    const {
+      categoryId,
+      ...postDate
+    } = updateBoardDto;
+
     return this.prisma.post.update({
       where: { id },
-      data: updateBoardDto,
-     ...postwithAuthor,
+      data: {
+        ...postDate,
+
+        ...(categoryId !== undefined
+          ? {
+            category: {
+              connect: {
+                id: categoryId,
+                deletedAt: null,
+              },
+            },
+          }
+          : {}),
+      },
+      ...postwithRelations
     });
   }
 
