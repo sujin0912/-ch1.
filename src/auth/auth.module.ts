@@ -8,12 +8,11 @@ import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { IdpService } from './idp/idp.service';
-import {HttpModule} from '@nestjs/axios';
-import {IdpAuthGuard} from './guard/idp-auth/idp-auth.guard';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
-    HttpModule. register({
+    HttpModule.register({
       timeout: 5000,
       maxRedirects: 0,
     }),
@@ -21,8 +20,7 @@ import {IdpAuthGuard} from './guard/idp-auth/idp-auth.guard';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret:
-          configService.getOrThrow<string>('JWT_SECRET'),
+        secret: configService.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
           expiresIn: '1h',
         },
@@ -36,14 +34,8 @@ import {IdpAuthGuard} from './guard/idp-auth/idp-auth.guard';
     PrismaService,
     JwtStrategy,
     IdpService,
-    IdpAuthGuard,
   ],
 
-  exports: [
-    IdpAuthGuard,
-    IdpService,
-    AuthService,
-  ],
-  
+  exports: [IdpService, AuthService],
 })
 export class AuthModule {}

@@ -1,5 +1,5 @@
 export type IdpUserInfo = {
-    sub: string;
-    email: string;
-    name: string;
+  sub: string;
+  email: string;
+  name: string;
 };

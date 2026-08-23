@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma} from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
@@ -22,9 +22,9 @@ const postwithRelations = {
   },
 } satisfies Prisma.PostDefaultArgs;
 
-export type PostWithAuthor = Prisma.PostGetPayload<typeof postwithRelations>;
+export type PostWithRelations = Prisma.PostGetPayload<typeof postwithRelations>;
 export type BoardListResult = {
-  items: PostWithAuthor[];
+  items: PostWithRelations[];
   totalCount: number;
 };
 
@@ -32,7 +32,10 @@ export type BoardListResult = {
 export class BoardsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createBoardDto: CreateBoardDto, authorId: string): Promise<PostWithAuthor> {
+  async create(
+    createBoardDto: CreateBoardDto,
+    authorId: string,
+  ): Promise<PostWithRelations> {
     return this.prisma.post.create({
       data: {
         title: createBoardDto.title,
@@ -51,14 +54,14 @@ export class BoardsRepository {
           },
         },
       },
-    ...postwithRelations,
+      ...postwithRelations,
     });
   }
 
   async findAll(offset: number, limit: number): Promise<BoardListResult> {
     const [items, totalCount] = await Promise.all([
       this.prisma.post.findMany({
-        ...postwithAuthor,
+        ...postwithRelations,
         orderBy: {
           id: 'desc',
         },
@@ -71,26 +74,25 @@ export class BoardsRepository {
     return { items, totalCount };
   }
 
-
-  async findOne(id: number): Promise<PostWithAuthor | null> {
+  async findOne(id: number): Promise<PostWithRelations | null> {
     return this.prisma.post.findUnique({
       where: { id },
-      ...postwithAuthor
-    });
-  }
- 
-  async findByUserId(authorId: string,): Promise<PostWithAuthor[]> {
-    return this.prisma.post.findMany({
-      where: { authorId },
-      ...postwithAuthor
+      ...postwithRelations,
     });
   }
 
-  async update(id: number, updateBoardDto: UpdateBoardDto): Promise<PostWithRelations> {
-    const {
-      categoryId,
-      ...postDate
-    } = updateBoardDto;
+  async findByUserId(authorId: string): Promise<PostWithRelations[]> {
+    return this.prisma.post.findMany({
+      where: { authorId },
+      ...postwithRelations,
+    });
+  }
+
+  async update(
+    id: number,
+    updateBoardDto: UpdateBoardDto,
+  ): Promise<PostWithRelations> {
+    const { categoryId, ...postDate } = updateBoardDto;
 
     return this.prisma.post.update({
       where: { id },
@@ -99,23 +101,23 @@ export class BoardsRepository {
 
         ...(categoryId !== undefined
           ? {
-            category: {
-              connect: {
-                id: categoryId,
-                deletedAt: null,
+              category: {
+                connect: {
+                  id: categoryId,
+                  deletedAt: null,
+                },
               },
-            },
-          }
+            }
           : {}),
       },
-      ...postwithRelations
+      ...postwithRelations,
     });
   }
 
-  async remove(id: number): Promise<PostWithAuthor> {
+  async remove(id: number): Promise<PostWithRelations> {
     return this.prisma.post.delete({
       where: { id },
-      ...postwithAuthor
+      ...postwithRelations,
     });
   }
 }

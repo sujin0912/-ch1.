@@ -1,5 +1,5 @@
 export type IdpLoginUrl = {
-    authorizeUrl: string;
-    state: string;
-    codeVerifier: string;
+  authorizeUrl: string;
+  state: string;
+  codeVerifier: string;
 };

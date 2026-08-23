@@ -4,9 +4,7 @@ import { Category } from '@prisma/client';
 
 @Injectable()
 export class CategoriesRepository {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<Category[]> {
     return await this.prisma.category.findMany({
@@ -19,9 +17,7 @@ export class CategoriesRepository {
     });
   }
 
-  async findByName(
-    name: string,
-  ): Promise<Category | null> {
+  async findByName(name: string): Promise<Category | null> {
     return await this.prisma.category.findUnique({
       where: {
         name,
@@ -29,9 +25,7 @@ export class CategoriesRepository {
     });
   }
 
-  async findById(
-    id: number,
-  ): Promise<Category | null> {
+  async findById(id: number): Promise<Category | null> {
     return await this.prisma.category.findFirst({
       where: {
         id,
@@ -40,9 +34,7 @@ export class CategoriesRepository {
     });
   }
 
-  async create(
-    name: string,
-  ): Promise<Category> {
+  async create(name: string): Promise<Category> {
     return await this.prisma.category.create({
       data: {
         name,
@@ -50,9 +42,7 @@ export class CategoriesRepository {
     });
   }
 
-  async restore(
-    id: number,
-  ): Promise<Category> {
+  async restore(id: number): Promise<Category> {
     return await this.prisma.category.update({
       where: {
         id,
@@ -63,9 +53,7 @@ export class CategoriesRepository {
     });
   }
 
-  async softDelete(
-    id: number,
-  ): Promise<Category> {
+  async softDelete(id: number): Promise<Category> {
     return await this.prisma.category.update({
       where: {
         id,
