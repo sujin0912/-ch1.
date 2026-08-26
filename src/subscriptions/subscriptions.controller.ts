@@ -8,13 +8,14 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import type { IdpAuthenticatedRequest } from '../auth/type/idp-authenticated-request.type';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionResponseDto } from './dto/subscription-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('category subscriptions')
+@ApiBearerAuth('access-token')
 @Controller('categories')
 @UseGuards(JwtAuthGuard)
 export class SubscriptionsController {

@@ -13,8 +13,10 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CategoryResponseDto } from './dto/category-response.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('categories')
+@ApiBearerAuth('access-token')
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
