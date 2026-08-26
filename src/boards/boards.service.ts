@@ -6,16 +6,24 @@ import {
 } from './boards.repository';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
+import { PushService } from '../push/push.service';
 
 @Injectable()
 export class BoardsService {
-  constructor(private readonly boardsRepository: BoardsRepository) {}
+  constructor(
+    private readonly boardsRepository: BoardsRepository,
+    private readonly pushService: PushService,
+  ) {}
 
   async create(
     createBoardDto: CreateBoardDto,
     userId: string,
   ): Promise<PostWithRelations> {
-    return this.boardsRepository.create(createBoardDto, userId);
+    const board = await this.boardsRepository.create(createBoardDto, userId);
+
+    this.pushService.sendToCategorySubscribers(board.categoryId);
+
+    return board;
   }
 
   async findAll(offset: number, limit: number): Promise<BoardListResult> {
