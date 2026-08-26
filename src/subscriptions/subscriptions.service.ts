@@ -3,7 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { SubscriptionsRepository } from './subscriptions.repository';
+import {
+  SubscriptionsRepository,
+  SubscriptionWithCategory,
+} from './subscriptions.repository';
 
 @Injectable()
 export class SubscriptionsService {
@@ -11,11 +14,14 @@ export class SubscriptionsService {
     private readonly subscriptionsRepository: SubscriptionsRepository,
   ) {}
 
-  async findMine(userId: string) {
+  async findMine(userId: string): Promise<SubscriptionWithCategory[]> {
     return await this.subscriptionsRepository.findAllByUser(userId);
   }
 
-  async subscribe(userId: string, categoryId: number) {
+  async subscribe(
+    userId: string,
+    categoryId: number,
+  ): Promise<SubscriptionWithCategory> {
     const category =
       await this.subscriptionsRepository.findCategory(categoryId);
 
@@ -35,7 +41,10 @@ export class SubscriptionsService {
     return await this.subscriptionsRepository.create(userId, categoryId);
   }
 
-  async unsubscribe(userId: string, categoryId: number) {
+  async unsubscribe(
+    userId: string,
+    categoryId: number,
+  ): Promise<SubscriptionWithCategory> {
     const existingSubscription =
       await this.subscriptionsRepository.findSubscription(userId, categoryId);
 

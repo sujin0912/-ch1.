@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBoardDto } from './dto/create-board.dto';
@@ -32,30 +32,48 @@ export type BoardListResult = {
 export class BoardsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private handleNotFound(error: unknown, message: string): never {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      throw new NotFoundException(message);
+    }
+
+    throw error;
+  }
+
   async create(
     createBoardDto: CreateBoardDto,
     authorId: string,
   ): Promise<PostWithRelations> {
-    return this.prisma.post.create({
-      data: {
-        title: createBoardDto.title,
-        content: createBoardDto.content,
+    return this.prisma.post
+      .create({
+        data: {
+          title: createBoardDto.title,
+          content: createBoardDto.content,
 
-        author: {
-          connect: {
-            id: authorId,
+          author: {
+            connect: {
+              id: authorId,
+            },
+          },
+
+          category: {
+            connect: {
+              id: createBoardDto.categoryId,
+              deletedAt: null,
+            },
           },
         },
-
-        category: {
-          connect: {
-            id: createBoardDto.categoryId,
-            deletedAt: null,
-          },
-        },
-      },
-      ...postwithRelations,
-    });
+        ...postwithRelations,
+      })
+      .catch((error: unknown) =>
+        this.handleNotFound(
+          error,
+          '사용자 또는 사용할 수 있는 카테고리를 찾을 수 없습니다.',
+        ),
+      );
   }
 
   async findAll(offset: number, limit: number): Promise<BoardListResult> {
@@ -74,11 +92,15 @@ export class BoardsRepository {
     return { items, totalCount };
   }
 
-  async findOne(id: number): Promise<PostWithRelations | null> {
-    return this.prisma.post.findUnique({
-      where: { id },
-      ...postwithRelations,
-    });
+  async findOne(id: number): Promise<PostWithRelations> {
+    return this.prisma.post
+    .findUniqueOrThrow({
+        where: { id },
+        ...postwithRelations,
+    })
+      .catch((error: unknown) =>
+        this.handleNotFound(error, 'Post with id ${id} not found'),
+      );
   }
 
   async findByUserId(authorId: string): Promise<PostWithRelations[]> {
@@ -94,30 +116,41 @@ export class BoardsRepository {
   ): Promise<PostWithRelations> {
     const { categoryId, ...postDate } = updateBoardDto;
 
-    return this.prisma.post.update({
-      where: { id },
-      data: {
-        ...postDate,
+    return this.prisma.post
+      .update({
+        where: { id },
+        data: {
+          ...postDate,
 
-        ...(categoryId !== undefined
-          ? {
-              category: {
-                connect: {
-                  id: categoryId,
-                  deletedAt: null,
+          ...(categoryId !== undefined
+            ? {
+                category: {
+                  connect: {
+                    id: categoryId,
+                    deletedAt: null,
+                  },
                 },
-              },
-            }
-          : {}),
-      },
-      ...postwithRelations,
-    });
+              }
+            : {}),
+        },
+        ...postwithRelations,
+      })
+      .catch((error: unknown) =>
+        this.handleNotFound(
+          error,
+          '게시글 또는 사용할 수 있는 카테고리를 찾을 수 없습니다.',
+        ),
+      );
   }
 
   async remove(id: number): Promise<PostWithRelations> {
-    return this.prisma.post.delete({
-      where: { id },
-      ...postwithRelations,
-    });
+    return this.prisma.post
+      .delete({
+        where: { id },
+        ...postwithRelations,
+      })
+      .catch((error: unknown) =>
+        this.handleNotFound(error, '삭제할 게시클을 찾을 수 없습니다.'),
+      );
   }
 }

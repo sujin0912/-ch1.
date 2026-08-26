@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import {
   BoardListResult,
   BoardsRepository,
@@ -10,7 +6,6 @@ import {
 } from './boards.repository';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class BoardsService {
@@ -28,13 +23,7 @@ export class BoardsService {
   }
 
   async findOne(id: number): Promise<PostWithRelations> {
-    const post = await this.boardsRepository.findOne(id);
-
-    if (!post) {
-      throw new NotFoundException(`Post with id ${id} not found`);
-    }
-
-    return post;
+    return await this.boardsRepository.findOne(id);
   }
 
   async findPostsByUserId(authorId: string): Promise<PostWithRelations[]> {
@@ -46,7 +35,7 @@ export class BoardsService {
     updateBoardDto: UpdateBoardDto,
     userId: string,
   ): Promise<PostWithRelations> {
-    const board = await this.findOne(id);
+    const board = await this.boardsRepository.findOne(id);
 
     if (board.authorId !== userId) {
       throw new ForbiddenException(
@@ -54,19 +43,7 @@ export class BoardsService {
       );
     }
 
-    try {
-      return await this.boardsRepository.update(id, updateBoardDto);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(
-          '게시글 또는 사용할 수 있는 카테고리를 찾을 수 없습니다.',
-        );
-      }
-      throw error;
-    }
+    return await this.boardsRepository.update(id, updateBoardDto);
   }
 
   async remove(id: number, userId: string): Promise<PostWithRelations> {

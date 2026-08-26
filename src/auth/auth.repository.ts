@@ -51,22 +51,22 @@ export class AuthRepository {
   }
 
   async findUserByIdOrThrow(id: string): Promise<User> {
-    try {
-      return await this.prisma.user.findUniqueOrThrow({
+    return this.prisma.user
+      .findUniqueOrThrow({
         where: {
           id,
         },
-      });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new UnauthorizedException('유효하지 않은 사용자입니다.');
-      }
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2025'
+        ) {
+          throw new UnauthorizedException('유효하지 않은 사용자입니다.');
+        }
 
-      throw error;
-    }
+        throw error;
+      });
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
@@ -78,22 +78,23 @@ export class AuthRepository {
   }
 
   async findUserByEmailOrThrow(email: string): Promise<User> {
-    try {
-      return await this.prisma.user.findFirstOrThrow({
+    return this.prisma.user
+      .findUniqueOrThrow({
         where: {
           email,
         },
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2025'
+        ) {
+          throw new UnauthorizedException(
+            '이메일 또는 비밀번호가 올바르지 않습니다.',
+          );
+        }
+
+        throw error;
       });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new UnauthorizedException(
-          '이메일 또는 비밀번호가 올바르지 않습니다.',
-        );
-      }
-      throw error;
-    }
   }
 }
