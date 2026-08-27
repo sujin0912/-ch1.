@@ -94,12 +94,12 @@ export class BoardsRepository {
 
   async findOne(id: number): Promise<PostWithRelations> {
     return this.prisma.post
-    .findUniqueOrThrow({
+      .findUniqueOrThrow({
         where: { id },
         ...postwithRelations,
-    })
+      })
       .catch((error: unknown) =>
-        this.handleNotFound(error, 'Post with id ${id} not found'),
+        this.handleNotFound(error, `Post with id ${id} not found`),
       );
   }
 

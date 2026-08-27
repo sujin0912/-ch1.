@@ -9,5 +9,6 @@ import { SubscriptionsService } from './subscriptions.service';
   imports: [PrismaModule, AuthModule],
   controllers: [SubscriptionsController],
   providers: [SubscriptionsService, SubscriptionsRepository],
+  exports: [SubscriptionsRepository],
 })
 export class SubscriptionsModule {}

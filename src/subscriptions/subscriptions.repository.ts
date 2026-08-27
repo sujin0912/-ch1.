@@ -83,4 +83,12 @@ export class SubscriptionsRepository {
       },
     });
   }
+
+  async findAllByCategory(categoryId: number): Promise<CategorySubscription[]> {
+    return await this.prisma.categorySubscription.findMany({
+      where: {
+        categoryId,
+      },
+    });
+  }
 }

@@ -78,6 +78,22 @@ export class AuthController {
       | string
       | undefined;
 
+    const clearIdpCookies = (): void => {
+      response.clearCookie('idp_state', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: false,
+        path: '/',
+      });
+
+      response.clearCookie('idp_code_verifier', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: false,
+        path: '/',
+      });
+    };
+
     if (query.error) {
       response.clearCookie('idp_state');
       response.clearCookie('idp_code_verifier');
@@ -101,6 +117,8 @@ export class AuthController {
       throw new UnauthorizedException('PKCE codeVerifier가 없습니다.');
     }
 
+    let tokens: LoginResponseDto;
+
     try {
       const idptoken = await this.idpService.exchangeCodeForToken(
         query.code,
@@ -109,30 +127,15 @@ export class AuthController {
 
       const userInfo = await this.idpService.getUserInfo(idptoken.access_token);
 
-      const tokens = await this.authService.loginWithIdp(userInfo);
-
-      response.status(200).json(tokens);
-
-      response.clearCookie('idp_state', {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
-        path: '/',
-      });
-
-      response.clearCookie('idp_code_verifier', {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
-        path: '/',
-      });
+      tokens = await this.authService.loginWithIdp(userInfo);
     } catch (error) {
-      response.clearCookie('idp_state', { path: '/' });
-
-      response.clearCookie('idp_code_verifier', { path: '/' });
-
+      clearIdpCookies();
       throw error;
     }
+
+    clearIdpCookies();
+
+    response.status(200).json(tokens);
   }
 
   @Get('idp/me')
