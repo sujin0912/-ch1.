@@ -19,10 +19,24 @@ export class PushService {
     this.pushServerUrl =
       this.configService.getOrThrow<string>('FAKE_PUSH_BASE_URL');
   }
-  sendToCategorySubscribers(categoryId: number): void {
-    from(this.subscriptionsRepository.findAllByCategory(categoryId))
+
+  async sendToCategorySubscribers(categoryId: number): Promise<void> {
+    const subscriptions = await this.subscriptionsRepository
+      .findAllByCategory(categoryId)
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+
+        this.logger.error(`Failed to load subscribers: ${message}`);
+
+        return null;
+      });
+
+    if (!subscriptions) {
+      return;
+    }
+
+    from(subscriptions)
       .pipe(
-        mergeMap((subscriptions) => from(subscriptions)),
         mergeMap(() => {
           const deviceId = randomUUID();
 
@@ -34,9 +48,10 @@ export class PushService {
               map(({ data }) => {
                 if (data.resultCode === -1) {
                   this.logger.error(
-                    `FakePush failed: deviceId =${data.resultData.deviceId}`,
+                    `FakePush failed: deviceId=${data.resultData.deviceId}`,
                   );
                 }
+
                 return data;
               }),
               catchError((error: unknown) => {

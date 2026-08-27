@@ -21,7 +21,7 @@ export class BoardsService {
   ): Promise<PostWithRelations> {
     const board = await this.boardsRepository.create(createBoardDto, userId);
 
-    this.pushService.sendToCategorySubscribers(board.categoryId);
+    void this.pushService.sendToCategorySubscribers(board.categoryId);
 
     return board;
   }
