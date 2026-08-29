@@ -27,6 +27,12 @@ export type BoardListResult = {
   items: PostWithRelations[];
   totalCount: number;
 };
+export type MyBoardListResult = {
+  items: PostWithRelations[];
+  page: number;
+  limit: number;
+  hasNext: boolean;
+};
 
 @Injectable()
 export class BoardsRepository {
@@ -90,6 +96,41 @@ export class BoardsRepository {
     ]);
 
     return { items, totalCount };
+  }
+
+  async findMine(
+    authorId: string,
+    page: number,
+    limit: number,
+  ): Promise<MyBoardListResult> {
+    const posts = await this.prisma.post.findMany({
+      relationLoadStrategy: 'join',
+      where: {
+        authorId,
+        category: {
+          deletedAt: null,
+        },
+      },
+      ...postwithRelations,
+      orderBy: [
+        {
+          createdAt: 'desc',
+        },
+        {
+          id: 'desc',
+        },
+      ],
+      skip: (page - 1) * limit,
+      take: limit + 1,
+    });
+    const hasNext = posts.length > limit;
+
+    return {
+      items: posts.slice(0, limit),
+      page,
+      limit,
+      hasNext,
+    };
   }
 
   async findOne(id: number): Promise<PostWithRelations> {

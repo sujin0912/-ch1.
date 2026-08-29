@@ -1,6 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Category } from '@prisma/client';
+import type { Category } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+
+const categoryWithCounts = {
+  select: {
+    id: true,
+    name: true,
+    _count: {
+      select: {
+        posts: true,
+        subscriptions: true,
+      },
+    },
+  },
+} satisfies Prisma.CategoryDefaultArgs;
+
+export type CategoryWithCounts = Prisma.CategoryGetPayload<
+  typeof categoryWithCounts
+>;
+
+export type CategoryUserSummary = Prisma.CategoryGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    _count: {
+      select: {
+        posts: true;
+        subscriptions: true;
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class CategoriesRepository {
@@ -13,6 +44,47 @@ export class CategoriesRepository {
       },
       orderBy: {
         id: 'asc',
+      },
+    });
+  }
+
+  async findStatistics(): Promise<CategoryWithCounts[]> {
+    return await this.prisma.category.findMany({
+      where: {
+        deletedAt: null,
+      },
+      orderBy: {
+        id: 'asc',
+      },
+      ...categoryWithCounts,
+    });
+  }
+
+  async findUserSummary(userId: string): Promise<CategoryUserSummary[]> {
+    return await this.prisma.category.findMany({
+      where: {
+        deletedAt: null,
+      },
+      orderBy: {
+        id: 'asc',
+      },
+      select: {
+        id: true,
+        name: true,
+        _count: {
+          select: {
+            posts: {
+              where: {
+                authorId: userId,
+              },
+            },
+            subscriptions: {
+              where: {
+                userId,
+              },
+            },
+          },
+        },
       },
     });
   }
