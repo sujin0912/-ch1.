@@ -3,6 +3,7 @@ import {
   BoardListResult,
   BoardsRepository,
   PostWithRelations,
+  MyBoardListResult,
 } from './boards.repository';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
@@ -32,6 +33,14 @@ export class BoardsService {
 
   async findOne(id: number): Promise<PostWithRelations> {
     return await this.boardsRepository.findOne(id);
+  }
+
+  async findMine(
+    userId: string,
+    page: number,
+    limit: number,
+  ): Promise<MyBoardListResult> {
+    return await this.boardsRepository.findMine(userId, page, limit);
   }
 
   async findPostsByUserId(authorId: string): Promise<PostWithRelations[]> {

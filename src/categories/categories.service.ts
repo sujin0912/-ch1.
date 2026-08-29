@@ -7,6 +7,8 @@ import {
 import { CategoriesRepository } from './categories.repository';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { Category } from '@prisma/client';
+import { CategoryStatisticsResponseDto } from './dto/category-statistics-response.dto';
+import { MyCategorySummaryResponseDto } from './dto/my-category-summary-response.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -25,6 +27,27 @@ export class CategoriesService {
 
   async findAll(): Promise<Category[]> {
     return await this.categoriesRepository.findAll();
+  }
+
+  async findStatistics(): Promise<CategoryStatisticsResponseDto[]> {
+    const categories = await this.categoriesRepository.findStatistics();
+
+    return categories.map((category) => ({
+      categoryId: category.id,
+      categoryName: category.name,
+      postCount: category._count.posts,
+      subscriberCount: category._count.subscriptions,
+    }));
+  }
+  async findMySummary(userId: string): Promise<MyCategorySummaryResponseDto[]> {
+    const categories = await this.categoriesRepository.findUserSummary(userId);
+
+    return categories.map((category) => ({
+      categoryId: category.id,
+      categoryName: category.name,
+      isSubscribed: category._count.subscriptions > 0,
+      myPostCount: category._count.posts,
+    }));
   }
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {

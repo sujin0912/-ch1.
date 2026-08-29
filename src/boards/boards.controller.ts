@@ -20,6 +20,8 @@ import { BoardListQueryDto } from './dto/board-list-query.dto';
 import { BoardListResponseDto } from './dto/board-list-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { IdpAuthenticatedRequest } from '../auth/type/idp-authenticated-request.type';
+import { MyBoardListQueryDto } from './dto/my-board-list-query.dto';
+import { MyBoardListResponseDto } from './dto/my-board-list-response.dto';
 
 @ApiTags('boards')
 @ApiBearerAuth('access-token')
@@ -43,6 +45,22 @@ export class BoardsController {
     @Query() query: BoardListQueryDto,
   ): Promise<BoardListResponseDto> {
     return await this.boardsService.findAll(query.offset, query.limit);
+  }
+
+  @ApiOperation({
+    summary: '본인이 작성한 게시글 페이지네이션 조회',
+  })
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async findMine(
+    @Req() request: IdpAuthenticatedRequest,
+    @Query() query: MyBoardListQueryDto,
+  ): Promise<MyBoardListResponseDto> {
+    return await this.boardsService.findMine(
+      request.user.id,
+      query.page,
+      query.limit,
+    );
   }
 
   @ApiOperation({
